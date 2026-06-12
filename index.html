@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>대한민국 vs 체코 승부 예측소</title>
+    <style>
+        /* CSS 스타일링 - image_17.png 수채화 테마 활용 */
+        body {
+            background-image: url('image_17.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            font-family: 'Malgun Gothic', sans-serif; /* 기본 서체 */
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            width: 1000px;
+            margin: 0 auto;
+            padding: 50px;
+            position: relative;
+        }
+
+        header {
+            position: absolute;
+            top: 50px;
+            left: 50px;
+        }
+
+        h1 {
+            font-family: 'Times New Roman', serif; /* 고전적인 세리프체 */
+            font-size: 48px;
+            color: #1a3c5a; /* 부드러운 블루 */
+            margin: 0;
+        }
+
+        h2 {
+            font-family: 'Malgun Gothic', sans-serif;
+            font-size: 24px;
+            color: #8c735c; /* 따뜻한 브라운 */
+            margin: 10px 0 0;
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 150px;
+        }
+
+        .left-column {
+            width: 250px;
+            background-color: rgba(255, 255, 255, 0.8); /* 수채화 종이 질감 */
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .participant {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .participant img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #8c735c;
+            margin-right: 15px;
+        }
+
+        .participant span {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a3c5a;
+        }
+
+        .participant button {
+            background-color: #8c735c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-left: auto;
+            transition: background-color 0.3s;
+        }
+
+        .participant button:hover {
+            background-color: #a38c73;
+        }
+
+        .prediction-input {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .prediction-input input {
+            width: 50px;
+            padding: 8px;
+            border: 2px solid #8c735c;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 18px;
+        }
+
+        .prediction-input span {
+            font-size: 24px;
+            color: #1a3c5a;
+            margin: 0 10px;
+        }
+
+        .dartboard-area {
+            position: relative;
+            width: 500px;
+            height: 500px;
+        }
+
+        .dartboard {
+            width: 100%;
+            height: 100%;
+            background-color: #fff8f0; /* 부드러운 크림색 */
+            border-radius: 50%;
+            border: 10px solid #8c735c;
+            position: relative;
+        }
+
+        /* 다트판 구획 디자인 - 간소화된 수채화 스타일 */
+        .ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid #a38c73;
+        }
+
+        .ring-1 { width: 90%; height: 90%; top: 5%; left: 5%; }
+        .ring-2 { width: 70%; height: 70%; top: 15%; left: 15%; }
+        .ring-3 { width: 50%; height: 50%; top: 25%; left: 25%; }
+        .ring-4 { width: 30%; height: 30%; top: 35%; left: 35%; }
+        .ring-5 { width: 10%; height: 10%; top: 45%; left: 45%; background-color: #d84315; /* 불스아이 */ }
+
+        .segment {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            clip-path: polygon(50% 50%, 100% 0%, 100% 100%);
+            border-left: 2px solid #a38c73;
+            transform-origin: 50% 50%;
+        }
+
+        .label {
+            position: absolute;
+            font-size: 14px;
+            font-weight: bold;
+            color: #1a3c5a;
+        }
+
+        .label-0-0 { top: 10%; left: 50%; transform: translateX(-50%); }
+        /* ... 다른 라벨 위치들 ... */
+
+        .dart {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-image: url('dart-airplane.png'); /* 작은 비행기 이미지 - 없으면 기본 비행기 아이콘 사용 */
+            background-size: cover;
+            display: none;
+            z-index: 10;
+        }
+
+        .dart-name-tag {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+
+        .right-column {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-box {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .result-box p {
+            font-size: 18px;
+            color: #1a3c5a;
+            margin: 0 0 10px;
+        }
+
+        .result-box .name {
+            font-weight: bold;
+            color: #d84315; /* 주황색 */
+        }
+
+        .modified-sign {
+            background-color: rgba(255, 255, 255, 0.6);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .modified-sign p {
+            font-size: 16px;
+            color: #8c735c;
+            margin: 0;
+        }
+
+        footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #a38c73;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>대한민국 vs 체코 승부 예측소</h1>
+            <h2>재미로 보는 다트 예측 게임</h2>
+        </header>
+
+        <div class="main-content">
+            <div class="left-column">
+                <div class="modified-sign">
+                    <p>오늘의 승자는?</p>
+                </div>
+                <!-- 참가자 목록 -->
+                <div id="participant-list"></div>
+                <div class="prediction-input">
+                    <input type="number" id="korea-score" value="2" min="0">
+                    <span> vs </span>
+                    <input type="number" id="czech-score" value="1" min="0">
+                </div>
+            </div>
+
+            <div class="dartboard-area">
+                <div class="dartboard">
+                    <!-- 다트판 구획 -->
+                    <div class="ring ring-1"></div>
+                    <div class="ring ring-2"></div>
+                    <div class="ring ring-3"></div>
+                    <div class="ring ring-4"></div>
+                    <div class="ring ring-5"></div>
+                    <!-- 다트판 라벨 - 예시로 0-0 승 ... -->
+                    <div class="label label-0-0">0-0</div>
+                </div>
+                <div class="dart" id="dart-airplane">
+                    <span class="dart-name-tag" id="dart-name">이희락</span>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="modified-sign">
+                    <p>다트 한 판 어때?</p>
+                </div>
+                <div class="result-box">
+                    <p id="result-message">점수를 입력하고 다트를 던지세요!</p>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>재미로만 즐기세요!</p>
+        </footer>
+    </div>
+
+    <script>
+        const participants = ['이희락', '이가희', '김윤상', '류지형', '박기현', '임도연', '문승현', '이은형', '김승재', '김재승', '노도균', '박승주', '이광석', '안준설'];
+        const koreaScoreInput = document.getElementById('korea-score');
+        const czechScoreInput = document.getElementById('czech-score');
+        const participantList = document.getElementById('participant-list');
+        const dartAirplane = document.getElementById('dart-airplane');
+        const dartNameTag = document.getElementById('dart-name');
+        const resultMessage = document.getElementById('result-message');
+        let currentParticipantIndex = 0;
+
+        // 참가자 목록 생성
+        participants.forEach((name, index) => {
+            const participantDiv = document.createElement('div');
+            participantDiv.className = 'participant';
+            participantDiv.innerHTML = `
+                <img src="default-profile.png" alt="${name}"> <!-- 기본 프로필 이미지 - 없으면 기본 원형 사용 -->
+                <span>${name}</span>
+                <button onclick="throwDart(${index})">다트 던지기</button>
+            `;
+            participantList.appendChild(participantDiv);
+        });
+
+        // 다트 던지기 함수
+        function throwDart(index) {
+            const koreaScore = koreaScoreInput.value;
+            const czechScore = czechScoreInput.value;
+            const name = participants[index];
+
+            // 다트 던지기 시뮬레이션
+            // 성공 확률 계산 (예: 2-1 승리가 가장 그럴듯하다면 더 높은 확률, 5-0 승리는 더 낮은 확률)
+            // 확률에 따라 다트가 다트판의 '성공' 또는 '실패' 구획에 꽂히는 것을 시뮬레이션
+
+            // 다트 던지기 애니메이션
+            dartAirplane.style.display = 'block';
+            dartNameTag.innerText = name;
+            // 다트 비행 애니메이션 구현 (예: 참가자 위치에서 다트판 중앙으로)
+
+            // 결과 계산 및 표시
+            // 확률에 따라 결과 메시지 생성
+            let result;
+            if (Math.random() < 0.7) { // 70% 확률로 성공
+                result = `${name}님의 예측 다트가 정확히 ${koreaScore}-${czechScore} 승리에 꽂혔습니다! 대박 예감!`;
+            } else { // 30% 확률로 실패
+                result = `아쉽네요, ${name}님의 다트가 빗나갔습니다. 체코가 의외로 선전할 것 같네요.`;
+            }
+            resultMessage.innerText = result;
+
+            // 연속 플레이: 다음 참가자에게 기회를 넘기거나, 모든 참가자가 한 번씩 던지게 함
+            currentParticipantIndex++;
+            if (currentParticipantIndex >= participants.length) {
+                currentParticipantIndex = 0; // 다시 처음으로
+            }
+        }
+    </script>
+</body>
+</html>
