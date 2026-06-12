@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대한민국 vs 체코 승부 예측소 - 사다리타기</title>
+    <title>대한민국 vs 체코 승부 예측소 - 사다리타기 v2</title>
     <style>
-        /* 수채화풍 디자인 및 축구 테마 블렌딩 */
         body {
             background-color: #f7f5f0;
             background-image: radial-gradient(#e3dec3 1px, transparent 1px);
@@ -82,11 +81,6 @@
             border-radius: 6px;
             border: 1px solid #eae6df;
             transition: all 0.2s;
-        }
-
-        .player-item.active {
-            background: #eef5fc;
-            border-color: #1a3c5a;
         }
 
         .player-name {
@@ -167,17 +161,28 @@
             gap: 5px;
         }
 
+        .speaker-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .bg-kr { background-color: #eef5fc; color: #1a3c5a; border: 1px solid #b3d1f2; }
+        .bg-cz { background-color: #fdf2f2; color: #c53030; border: 1px solid #feb2b2; }
+
         #ai-narration {
             font-size: 13px;
             line-height: 1.6;
             color: #555;
-            min-height: 150px;
+            min-height: 180px;
             white-space: pre-line;
         }
 
         #result-board {
             font-size: 13px;
-            max-height: 320px;
+            max-height: 290px;
             overflow-y: auto;
         }
 
@@ -185,7 +190,6 @@
             padding: 6px 0;
             border-bottom: 1px dashed #eae6df;
         }
-        .result-entry:last-child { border-bottom: none; }
         .res-name { font-weight: bold; color: #1a3c5a; }
         .res-score { font-weight: bold; color: #d84315; margin-left: 5px;}
 
@@ -224,7 +228,8 @@
         <div class="sidebar-right">
             <div class="panel">
                 <div class="panel-title">🤖 AI 실시간 무당 분석</div>
-                <div id="ai-narration">선수가 슛을 날리면 인터넷 서집 빅데이터 기반 전술 캐스팅이 시작됩니다...</div>
+                <div id="speaker-box"></div>
+                <div id="ai-narration">선수가 슛을 날리면 라인업 피드백 기반 전술 캐스팅이 시작됩니다...</div>
             </div>
             
             <div class="panel">
@@ -235,18 +240,29 @@
     </div>
 
     <footer>
-        <p>© 2026 Soccer Prediction Studio. 본 예측은 재미용이며 과학적 근거가 아주 조금(?) 숨어있을 수 있습니다.</p>
+        <p>© 2026 Soccer Prediction Studio. 본 예측은 재미용이며 라인업 분석 데이터가 포함되어 있습니다.</p>
     </footer>
 </div>
 
 <script>
-    // 1. 데이터 설정
+    // 1. 참가자 데이터 설정
     const players = ['권용실', '이희락', '이가희', '김윤상', '류지형', '박기현', '임도연', '문승현', '이은형', '김승재', '김재승', '노도균', '박승주', '이광석', '안준설'];
-    
-    // 0:0 ~ 3:3 조합 중 흥미진진한 15가지 스코어 배치 (선수 숫자와 일치)
     const scores = ['2:1', '1:0', '0:0', '2:0', '1:1', '3:2', '0:1', '2:2', '3:1', '1:2', '0:2', '3:0', '1:3', '2:3', '3:3'];
 
-    // 2. 사다리 구조 물리 엔진 초기화
+    // 2. 이미지(image_bcc98f.jpg) 기반 양 팀 라인업 데이터 구축
+    const krSquad = [
+        '7 손흥민', '19 이강인', '10 이재성', '6 황인범', 
+        '8 백승호', '22 설영우', '3 이기혁', '4 김민재', 
+        '2 이한범', '13 이태석', '1 김승규'
+    ];
+    
+    const czSquad = [
+        '10 P. 시크', '15 P. 슐츠', '24 A. 소이카', '22 T. 수첵', 
+        '17 L. 프로보드', '20 J. 젤레니', '7 L. 크레이치', '5 V. 쿠팔', 
+        '6 Š. 찰로펙', '4 R. 흐라나치', '1 M. 코바르'
+    ];
+
+    // 3. 사다리 구조 엔진 초기화
     const canvas = document.getElementById('ladderCanvas');
     const ctx = canvas.getContext('2d');
     
@@ -256,12 +272,10 @@
     const endY = 460;
     const stepX = (canvas.width - paddingX * 2) / (numLines - 1);
     
-    // 가로줄(다리) 고정 생성 (다시 실행해도 꼬이지 않게 고정 난수로 맵 생성)
     const bridges = [];
-    const numBridges = 45; // 다리 총 개수
+    const numBridges = 45;
     
-    // 고정된 시드로 사다리 다리 놓기
-    let seed = 12345;
+    let seed = 54321;
     function randomSeeded() {
         let x = Math.sin(seed++) * 10000;
         return x - Math.floor(x);
@@ -270,45 +284,35 @@
     for (let i = 0; i < numBridges; i++) {
         let lineIdx = Math.floor(randomSeeded() * (numLines - 1));
         let h = startY + 30 + randomSeeded() * (endY - startY - 60);
-        // 겹침 방지
         if (!bridges.some(b => b.line === lineIdx && Math.abs(b.y - h) < 15)) {
             bridges.push({ line: lineIdx, y: h });
         }
     }
-    // Y축 정렬
     bridges.sort((a, b) => a.y - b.y);
 
-    // 3. UI 그리기 함수
     function drawLadder() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // 세로줄 및 이름, 스코어 텍스트 기본 스타일
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#ddd3c4';
         
         for (let i = 0; i < numLines; i++) {
             let x = paddingX + i * stepX;
-            
-            // 세로줄 그리기
             ctx.beginPath();
             ctx.moveTo(x, startY);
             ctx.lineTo(x, endY);
             ctx.stroke();
             
-            // 상단 참가자 이름 (세로 배치 위트)
             ctx.fillStyle = '#1a3c5a';
             ctx.font = 'bold 11px Malgun Gothic';
             ctx.textAlign = 'center';
             ctx.fillText(players[i][0], x, startY - 22);
             ctx.fillText(players[i].substring(1), x, startY - 8);
             
-            // 하단 스코어 결과
             ctx.fillStyle = '#8c735c';
             ctx.font = 'bold 12px Georgia';
             ctx.fillText(scores[i], x, endY + 20);
         }
         
-        // 가로 다리 그리기
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#a38c73';
         bridges.forEach(b => {
@@ -321,30 +325,19 @@
         });
     }
 
-    // 4. 경로 추적 알고리즘
     function getPath(startLine) {
         let currentLine = startLine;
         let currentY = startY;
         const path = [{ x: paddingX + currentLine * stepX, y: currentY }];
         
         while (currentY < endY) {
-            // 현재 Y 위치보다 아래에 있는 다리 중 가장 가까운 다리 찾기
             let nextBridge = bridges.find(b => b.y > currentY && (b.line === currentLine || b.line === currentLine - 1));
-            
             if (nextBridge) {
-                // 다리 직전까지 내려감
                 currentY = nextBridge.y;
                 path.push({ x: paddingX + currentLine * stepX, y: currentY });
-                
-                // 옆으로 이동
-                if (nextBridge.line === currentLine) {
-                    currentLine++;
-                } else {
-                    currentLine--;
-                }
+                if (nextBridge.line === currentLine) { currentLine++; } else { currentLine--; }
                 path.push({ x: paddingX + currentLine * stepX, y: currentY });
             } else {
-                // 더이상 다리가 없으면 바닥까지 직진
                 currentY = endY;
                 path.push({ x: paddingX + currentLine * stepX, y: currentY });
             }
@@ -352,7 +345,6 @@
         return { path, finalLine: currentLine };
     }
 
-    // 5. 애니메이션 및 축구공 롤링 이펙트
     let isPlaying = false;
     function animateBall(playerIdx, path, finalScore) {
         isPlaying = true;
@@ -360,18 +352,15 @@
         
         let pointIdx = 0;
         let currentPos = { x: path[pointIdx].x, y: path[pointIdx].y };
-        const speed = 6; // 공 구르는 속도
+        const speed = 7;
         
         function move() {
             if (pointIdx >= path.length - 1) {
-                // 종착지 도착
                 drawLadder();
-                // 도착지에 축구공 쾅!
                 ctx.beginPath();
                 ctx.arc(currentPos.x, currentPos.y, 8, 0, Math.PI * 2);
                 ctx.fillStyle = '#d84315';
                 ctx.fill();
-                
                 finishGame(playerIdx, finalScore);
                 return;
             }
@@ -390,10 +379,7 @@
                 currentPos.y += (dy / dist) * speed;
             }
             
-            // 화면 새로 그리며 축구공 궤적 연출
             drawLadder();
-            
-            // 축구공 모양 심볼 그리기 (수채화 덩어리 느낌의 미니 축구공)
             ctx.beginPath();
             ctx.arc(currentPos.x, currentPos.y, 7, 0, Math.PI * 2);
             ctx.fillStyle = '#1a3c5a';
@@ -407,55 +393,76 @@
         move();
     }
 
-    // 6. AI 인터넷 수집 데이터 기반 전술 나레이션 시스템
-    const aiComments = {
-        win: [
-            " [AI 분석 브리핑]\n최근 체코 수비진의 전술적 균열과 대한민국 유럽파 공격진의 침투 속도를 결합해 도출한 '인터넷 정밀 데이터형' 스코어입니다. 측면 크로스 차단만 성공한다면 승리 확률이 아주 지배적입니다!",
-            " [AI 분석 브리핑]\n네티즌들의 긍정 데이터 수치 74%를 반영한 상남자 스코어군요. 황희찬-손흥민 라인의 전환 패스가 적중할 경우, 체코의 장신 빌드업을 순식간에 무력화할 수 있다는 예측입니다."
+    // 4. 선수 나레이션 및 코멘트 풀
+    const playerComments = {
+        kr: [
+            "위치 선정과 전술적 빌드업이 아주 완벽하게 맞아떨어진 스코어입니다. 이 기세를 몰아서 중원 압박을 유지하면 무조건 우리가 가져옵니다!",
+            "측면 공간 침투가 제대로 통할 것 같은 예감이 드네요. 데이터 분석대로만 움직인다면 이번 체코전은 기분 좋은 승리가 될 것입니다."
+        ],
+        cz: [
+            "대한민국의 뒷공간을 노리는 우리의 세트피스와 롱패스 전략이 완벽하게 적중할 때 나올 법한 차가운 현실적 스코어입니다.",
+            "중원 압박에서 우리가 우위를 점한다면 스코어보드는 이렇게 흘러갈 확률이 높습니다. 방심하지 말고 피지컬로 밀어붙여야 합니다."
         ],
         draw: [
-            " [AI 분석 브리핑]\n체코의 정통 피지컬 축구와 대한민국의 중원 압박 축구가 정면 충돌할 때 발생하는 전형적인 장기전 구도입니다. 축구 커뮤니티 전문가들이 가장 방어적으로 배팅하는 쫄깃한 스코어네요.",
-            " [AI 분석 브리핑]\n0:0 혹은 1:1 같은 무승부는 골키퍼들의 눈부신 선방쇼가 전제됩니다. 전술 유튜버들의 분석에 따르면, 양 팀 모두 후반전 교체 카드 타이밍에 극도로 신중할 때 나올 법한 정밀한 무승부 예측입니다."
-        ],
-        lose: [
-            " [AI 분석 브리핑]\n체코의 세트피스 고공 점프력과 역습 롱패스 효율을 극대화해 시뮬레이션한 냉철한 비관주의적 스코어입니다. 뼈아프지만 우리 대표팀이 수비 밸런스를 잡지 못하면 경고등이 켜질 수 있다는 경각심을 주는 분석입니다."
+            "서로 한 치의 양보도 없는 팽팽한 허리싸움이 예상됩니다. 실수 하나가 승패를 가를 만큼 아주 치열한 진흙탕 싸움이 될 것 같군요.",
+            "전술 유튜버들과 빅데이터가 가리키는 가장 숨 막히는 스코어입니다. 결국 양 팀 골키퍼의 선방 능력에 따라 이 균형이 깨질 겁니다."
         ]
     };
 
-    function getAiNarration(score) {
+    function generateNarration(score) {
         let parts = score.split(':');
         let kr = parseInt(parts[0]);
         let cz = parseInt(parts[1]);
         
-        let pool = aiComments.draw;
-        if (kr > cz) pool = aiComments.win;
-        if (kr < cz) pool = aiComments.lose;
+        let speaker = "";
+        let teamClass = "";
+        let comment = "";
         
-        let randText = pool[Math.floor(Math.random() * pool.length)];
-        return `🎯 스코어 [${score}] 매칭 완료!\n\n${randText}`;
+        if (kr > cz) {
+            speaker = "🇰🇷 대한민국 " + krSquad[Math.floor(Math.random() * krSquad.length)];
+            teamClass = "speaker-badge bg-kr";
+            comment = playerComments.kr[Math.floor(Math.random() * playerComments.kr.length)];
+        } else if (kr < cz) {
+            speaker = "🇨🇿 체코 " + czSquad[Math.floor(Math.random() * czSquad.length)];
+            teamClass = "speaker-badge bg-cz";
+            comment = playerComments.cz[Math.floor(Math.random() * playerComments.cz.length)];
+        } else {
+            // 무승부일 때는 양 팀 중 무작위 등판
+            if (Math.random() > 0.5) {
+                speaker = "🇰🇷 대한민국 " + krSquad[Math.floor(Math.random() * krSquad.length)];
+                teamClass = "speaker-badge bg-kr";
+            } else {
+                speaker = "🇨🇿 체코 " + czSquad[Math.floor(Math.random() * czSquad.length)];
+                teamClass = "speaker-badge bg-cz";
+            }
+            comment = playerComments.draw[Math.floor(Math.random() * playerComments.draw.length)];
+        }
+        
+        return { speaker, teamClass, comment };
     }
 
-    // 7. 게임 종료 및 결과 누적
+    // 5. 경기 종료 및 결과 처리
     const recordedResults = [];
     function finishGame(playerIdx, finalScore) {
         isPlaying = false;
         toggleButtons(true);
         
         let pName = players[playerIdx];
+        let narObj = generateNarration(finalScore);
         
-        // AI 나레이션 송출
-        document.getElementById('ai-narration').innerText = `🎙️ 캐스터 멘트:\n"${pName}" 선수의 예측 슛!\n\n${getAiNarration(finalScore)}`;
+        // AI 상단 스피커 및 멘트 업데이트
+        document.getElementById('speaker-box').innerHTML = `<span class="${narObj.teamClass}">${narObj.speaker} 인터뷰</span>`;
+        document.getElementById('ai-narration').innerText = `🎙️ [캐스터 연결 수집 멘트]\n"${pName}" 선수의 슈팅 결과는 [${finalScore}] 입니다!\n\n"${narObj.comment}"`;
         
         // 전광판 업데이트
         recordedResults.push({ name: pName, score: finalScore });
         const board = document.getElementById('result-board');
         board.innerHTML = recordedResults.map(r => `
             <div class="result-entry">
-                🏃 <span class="res-name">${r.name}</span> ➔ <span class="res-score">대 한국 ${r.score} 체코</span>
+                🏃 <span class="res-name">${r.name}</span> ➔ <span class="res-score">대한민국 ${r.score} 체코</span>
             </div>
         `).join('');
         
-        // 버튼 비활성화 (이미 참여한 사람 처리)
         document.getElementById(`btn-${playerIdx}`).disabled = true;
         document.getElementById(`player-${playerIdx}`).style.opacity = '0.5';
     }
@@ -463,13 +470,10 @@
     function toggleButtons(enable) {
         players.forEach((_, idx) => {
             let btn = document.getElementById(`btn-${idx}`);
-            if (btn && !btn.disabled) {
-                btn.disabled = !enable;
-            }
+            if (btn && !btn.disabled) { btn.disabled = !enable; }
         });
     }
 
-    // 8. 초기 빌드 및 클릭 이벤트 바인딩
     function init() {
         const listContainer = document.getElementById('player-list');
         players.forEach((name, idx) => {
@@ -482,18 +486,13 @@
             `;
             listContainer.appendChild(div);
         });
-        
         drawLadder();
     }
 
     window.startLadder = function(idx) {
         if (isPlaying) return;
-        
-        // 경로 계산
         let result = getPath(idx);
         let finalScore = scores[result.finalLine];
-        
-        // 공 굴리기 애니메이션 시작
         animateBall(idx, result.path, finalScore);
     };
 
